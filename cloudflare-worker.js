@@ -1,36 +1,28 @@
 export default {
   async fetch(request, env, ctx) {
     try {
+      // Debug: check available bindings
+      const availableBindings = Object.keys(env);
+      console.log("Available bindings:", availableBindings);
+      
       const url = new URL(request.url);
-      let key = url.pathname.substring(1); // e.g., "media/user_12/tts_..."
-      
-      // Remove "media/" prefix if present.
+      let key = url.pathname.substring(1);
       if (key.startsWith("media/")) {
-        key = key.substring(6);  // Remove "media/"
+        key = key.substring(6);
       }
-      
-      // Fetch the object from R2 using your binding.
+      if (!env.MY_R2_BUCKET) {
+        return new Response("R2 binding not available: " + availableBindings.join(", "), { status: 500 });
+      }
       const object = await env.MY_R2_BUCKET.get(key);
       if (!object) {
         return new Response("Not found", { status: 404 });
       }
-      
-      // Manually build a new Headers object.
       const headers = new Headers();
-      // Set Content-Type based on metadata, if available.
       if (object.httpMetadata?.contentType) {
         headers.set("Content-Type", object.httpMetadata.contentType);
-      } else {
-        headers.set("Content-Type", "application/octet-stream");
       }
-      
-      // Do NOT set the Content-Encoding header (or explicitly set it to identity if desired).
-      // headers.set("Content-Encoding", "identity"); // Optional
-      
-      return new Response(object.body, {
-        status: 200,
-        headers: headers
-      });
+      // Do not include Content-Encoding
+      return new Response(object.body, { status: 200, headers });
     } catch (err) {
       return new Response("Worker error: " + err.toString(), { status: 500 });
     }
