@@ -7,7 +7,7 @@ workers_dev = false
 route = "https://sible.ai/*"
 zone_id = "eeur"
 
-[[bindings]]
+[[env.production.bindings]]
 type = "r2_bucket"
 name = "MY_R2_BUCKET"
 bucket_name = "sible-01"
